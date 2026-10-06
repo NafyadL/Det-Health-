@@ -1,10 +1,84 @@
 # Det(Health)
-Your personalized determinants of health app, using security-first and offline data approaches to maximize usability
 
-Determinants of health, as defined by the World Health Organization (WHO), range from socio-economic and behavioral factors to genetics. They are indicators of the future health outcomes and risks of an individual or a population. This project aims to produce and ship a locally hosted, encrypted application that ingests data from a user's health wearables, smart medical equipment, and other health-related apps to generate personalized health trends, using research and medical data to identify behavioral patterns and potential risks. The app will allow users to predict future health outcomes based on their current behavior and suggest corrective measures or encourage existing habits using their health data. The cornerstones of this app will be ease of use and a local-first, secure approach to collecting and analyzing user health data. The app is designed for use in areas with unreliable power and internet connectivity. 
+A local-first prototype for keeping and exploring personal wearable data on the
+device where it is used. It is motivated by shared-device clinical settings
+where reliable internet, cloud services, and dedicated IT support may not be
+available.
 
+## Design principles
 
-Roadmap:
+- **Offline by design:** data will enter through local file imports, not wearable
+  cloud APIs or external services.
+- **Private by default:** the target is encryption at rest with keys derived
+  from each user's password.
+- **Shared-device aware:** the roadmap includes multiple users, role-based
+  access, and an audit trail.
+- **Descriptive, not diagnostic:** the app will show trends, averages, and
+  changes over time. It will not predict health outcomes or give medical advice.
 
-- Develop a locally hosted app using user data uploads with the option to use it even when offline
-- Enhance with decentralization, syncing data across multiple devices and allowing offline access 
+## Current status
+
+This repository is an early application scaffold. It has a FastAPI app, a local
+SQLite database bootstrap, and a database readiness endpoint. The database
+currently stores only a schema-version marker; health records, authentication,
+encryption, imports, and role-based access are **not implemented yet**. Do not
+use this prototype to store real health data.
+
+## Run locally
+
+Requires Python 3.10 or newer.
+
+```sh
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements-dev.txt
+uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+```
+
+The app listens on the local machine at <http://127.0.0.1:8000>. Check
+<http://127.0.0.1:8000/health> to confirm the app can read its SQLite schema
+metadata. The OpenAPI schema is available locally at
+<http://127.0.0.1:8000/openapi.json>; hosted Swagger/ReDoc pages are disabled
+to avoid loading documentation assets from a CDN.
+
+By default, SQLite is created at `data/det_health.sqlite3`. Set
+`DET_HEALTH_DB` to choose another local database file, for example:
+
+```sh
+DET_HEALTH_DB=/path/to/local/det-health.sqlite3 uvicorn app.main:app --host 127.0.0.1
+```
+
+## Project structure
+
+```text
+.
+├── app/
+│   ├── database.py       # SQLite initialization and readiness check
+│   └── main.py           # FastAPI app and /health endpoint
+├── tests/
+│   └── test_main.py      # Local app smoke test
+├── main.py               # Optional `uvicorn main:app` entry point
+├── requirements.txt
+└── requirements-dev.txt
+```
+
+Run the tests with:
+
+```sh
+pytest
+```
+
+## Roadmap
+
+1. Import one wearable export format from a local file (initial candidate:
+   Apple Health XML or a Fitbit CSV export).
+2. Add password-derived encryption before health records are written to SQLite.
+3. Add per-device users and authentication, then role-based visibility for
+   patient, clinician, and administrator roles.
+4. Present descriptive trends over time without diagnostic claims.
+5. Add an audit log and, later, opt-in device-to-device sync with conflict
+   handling.
+
+Encryption and authentication are prerequisites to persisting real health
+records; until then, this project is a development scaffold, not a clinical
+tool.
